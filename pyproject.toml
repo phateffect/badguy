@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "badguy"
+version = "0.1.0"
+description = ""
+authors = ["ShiWei <shiwei@leyantech.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.32.2"
+click = "^8.1.7"
+tomli = "^2.0.1"
+arrow = "^1.3.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
