@@ -5,9 +5,11 @@ from itertools import product
 
 from .db import Database
 from .jiushi import JiushiClient
+from .dingtalk import DingTalk
 
 db = Database()
 js = JiushiClient()
+ding = DingTalk()
 
 
 @click.group()
@@ -42,8 +44,15 @@ def update_ground_hours(venue_ids, date):
 def find(hours):
     hours = [int(h.strip()) for h in hours.split(",") if h.strip()]
     with db.connect() as conn:
-        result = db.find_venue(conn, hours)
-        print(result)
+        for result in db.find_venue(conn, hours):
+            tip = ["漏网之鱼", f"{result.date}: {result.hours}"]
+            for hour, ground in result.get_best():
+                tip.append(f"{hour:02}:\t{ground}")
+            content = "\n".join(tip)
+
+            if db.update_notification(conn, result.key, content):
+                continue
+            ding.send(content)
 
 
 if __name__ == "__main__":

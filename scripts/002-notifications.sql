@@ -1,0 +1,5 @@
+CREATE TABLE notifications (
+  id TEXT PRIMARY KEY,
+  sent BOOLEAN NOT NULL DEFAULT FALSE,
+  content TEXT NOT NULL
+);
