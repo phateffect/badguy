@@ -178,3 +178,4 @@ pyrightconfig.json
 /dates
 /config.toml
 /run.sh
+/*.log

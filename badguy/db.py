@@ -32,8 +32,16 @@ class Database(BaseSettings):
           ) ON CONFLICT (date, hour, venue_id, ground_id) DO UPDATE
           SET available = EXCLUDED.available
         """
+        c_stmt = """
+          UPDATE ground_hours
+          SET available = FALSE
+          WHERE 1=1
+            AND date < CURRENT_DATE
+            OR (date = CURRENT_DATE AND hour <= EXTRACT(hour from now()))
+        """
         with conn.cursor() as cur:
             cur.executemany(stmt, ground_hours)
+            cur.execute(c_stmt)
 
     def update_notification(self, conn, key, content):
         stmt = """
