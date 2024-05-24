@@ -45,17 +45,21 @@ class Database(BaseSettings):
             GROUP BY venue_id, date
           )
           SELECT
-            venue_id, date, hour,
-            ARRAY_AGG(ground_name ORDER BY ground_name ASC) AS ground_names
+            MD5(STRING_AGG(id::TEXT, '|')) AS key,
+            venue_id, date, ARRAY_TO_STRING(%(hours)s, ',') AS hours,
+            ARRAY_AGG(
+              JSON_BUILD_OBJECT('hour', hour, 'ground_name', ground_name)
+              ORDER BY hour ASC, ground_name ASC
+            ) AS grounds
           FROM ground_hours
           WHERE id IN (
             SELECT
               UNNEST(ids) AS id
             FROM available_hours
-            WHERE hours <@ %(hours)s
+            WHERE hours @> %(hours)s
           )
-          GROUP BY venue_id, date, hour
-          ORDER BY venue_id, date ASC, hour ASC
+          GROUP BY venue_id, date
+          ORDER BY venue_id, date ASC
         """
         with conn.cursor(row_factory=dict_row) as cur:
             cur.execute(stmt, {"hours": hours})

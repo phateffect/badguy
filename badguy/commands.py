@@ -31,10 +31,19 @@ def update_ground_hours(venue_ids, date):
     else:
         dates = [arrow.get(date).date()]
 
-    for venue_id, date in product(venue_ids, dates):
-        hours = js.get_venue_hours(venue_id, date)
-        print(venue_id, date, len([h for h in hours if h["available"]]))
+    with db.connect() as conn:
+        for venue_id, date in product(venue_ids, dates):
+            hours = js.get_venue_hours(venue_id, date)
+            db.upsert_ground_hours(conn, hours)
 
+
+@cli.command()
+@click.option("--hours", prompt=True)
+def find(hours):
+    hours = [int(h.strip()) for h in hours.split(",") if h.strip()]
+    with db.connect() as conn:
+        result = db.find_venue(conn, hours)
+        print(result)
 
 
 if __name__ == "__main__":

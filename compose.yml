@@ -6,5 +6,6 @@ services:
       POSTGRES_DB: badguy
       POSTGRES_USER: badguy
       POSTGRES_PASSWORD: badguy
+      PGTZ: Asia/Shanghai
     ports:
       - 10001:5432
