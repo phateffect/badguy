@@ -1,30 +1,14 @@
 import arrow
+import aiohttp
 import base64
+import json
 import hashlib
-import requests
 
-from functools import cached_property
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 def get_time(ts):
     return arrow.get(ts).to("Asia/Shanghai")
-
-
-class JiushiAuth(requests.auth.AuthBase):
-    def __init__(self, app_id, sign_key):
-        self.app_id = app_id
-        self.sign_key = sign_key
-
-    def __call__(self, req):
-        hexdigest = hashlib.md5(req.body + self.sign_key).hexdigest()
-        js_sign = base64.b64encode(hexdigest.encode("UTF-8")).decode("UTF-8")
-        req.headers.update({
-            "gw_channel": "api",
-            "app_id": self.app_id,
-            "js_sign": js_sign
-        })
-        return req
 
 
 class JiushiClient(BaseSettings):
@@ -37,28 +21,31 @@ class JiushiClient(BaseSettings):
     app_id: str
     sign_key: bytes
 
-    @cached_property
-    def session(self):
-        session = requests.session()
-        session.auth = JiushiAuth(self.app_id, self.sign_key)
-        return session
+    async def call(self, api, payload):
+        data = json.dumps(payload).encode("UTF-8")
+        hexdigest = hashlib.md5(data + self.sign_key).hexdigest()
+        js_sign = base64.b64encode(hexdigest.encode("UTF-8")).decode("UTF-8")
 
-    def call(self, api, data):
-        resp = self.session.post(
-            f"https://jsapp.jussyun.com/jiushi-core/venue{api}",
-            json=data
-        )
-        result = resp.json()
+        headers = {
+            "content-type": "application/json",
+            "gw_channel": "api",
+            "app_id": self.app_id,
+            "js_sign": js_sign
+        }
+        url = f"https://jsapp.jussyun.com/jiushi-core/venue{api}"
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, data=data, headers=headers) as resp:
+                result = await resp.json()
         return result["data"]
 
-    def get_venue_book_time(self, venue_id):
-        result = self.call("/getVenueBookTime", {"venueId": venue_id})
+    async def get_venue_book_time(self, venue_id):
+        result = await self.call("/getVenueBookTime", {"venueId": venue_id})
         return result
 
-    def get_venue_hours(self, venue_id, date):
+    async def get_venue_hours(self, venue_id, date):
         date = arrow.get(date).replace(tzinfo="Asia/Shanghai")
         ts = date.int_timestamp * 1000
-        result = self.call(
+        result = await self.call(
             "/getVenueGround",
             {"venueId": venue_id, "bookTime": ts},
         )

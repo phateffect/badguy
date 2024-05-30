@@ -13,9 +13,6 @@ class DingTalk(BaseSettings):
     token: str
 
     def send(self, content):
-        print("!"*30)
-        print(content)
-        print("!"*30)
         resp = requests.post(
             "https://oapi.dingtalk.com/robot/send",
             params={"access_token": self.token},

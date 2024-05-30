@@ -1,4 +1,5 @@
 import arrow
+import asyncio
 import click
 
 from itertools import product
@@ -17,6 +18,15 @@ def cli():
     pass
 
 
+async def aget_hours(venue_ids, dates):
+    async with asyncio.TaskGroup() as tg:
+        tasks = [
+            tg.create_task(js.get_venue_hours(venue_id, date))
+            for venue_id, date in product(venue_ids, dates)
+        ]
+    return [hour for task in tasks for hour in task.result()]
+
+
 @cli.command()
 @click.option("--venue-ids", prompt=True)
 @click.option("--date")
@@ -33,10 +43,10 @@ def update_ground_hours(venue_ids, date):
     else:
         dates = [arrow.get(date).date()]
 
+    hours = asyncio.run(aget_hours(venue_ids, dates))
+
     with db.connect() as conn:
-        for venue_id, date in product(venue_ids, dates):
-            hours = js.get_venue_hours(venue_id, date)
-            db.upsert_ground_hours(conn, hours)
+        db.upsert_ground_hours(conn, hours)
 
 
 @cli.command()
@@ -45,7 +55,10 @@ def find(hours):
     hours = [int(h.strip()) for h in hours.split(",") if h.strip()]
     with db.connect() as conn:
         for result in db.find_venue(conn, hours):
-            tip = ["漏网之鱼", f"{result.date}: {result.hours}"]
+            tip = [
+                "漏网之鱼",
+                f"{result.date}/周{result.date.isoweekday()}: {result.hours}"
+            ]
             for hour, ground in result.get_best():
                 tip.append(f"{hour:02}:\t{ground}")
             content = "\n".join(tip)

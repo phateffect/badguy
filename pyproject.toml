@@ -4,6 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["ShiWei <shiwei@leyantech.com>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -15,11 +16,14 @@ psycopg = {extras = ["binary"], version = "^3.1.19"}
 pydantic = "^2.7.1"
 pydantic-settings = "^2.2.1"
 tqdm = "^4.66.4"
+aiohttp = {extras = ["speedups"], version = "^3.9.5"}
+jinja2 = "^3.1.4"
 
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.5"
 pgcli = "^4.1.0"
+ipython = "^8.24.0"
 
 
 [[tool.poetry.source]]
